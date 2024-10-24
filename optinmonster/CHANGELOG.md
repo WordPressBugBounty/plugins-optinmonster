@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to the OptinMonster plugin will be documented in this file.
 
+### 2.16.7 - 2024-10-24
+* Improvements to campaign output settings management.
+* UI improvements.
+
 ### 2.16.6 - 2024-10-15
 * Removed compatibility checks for WordFence as they are no longer needed.
 * Updates to onboarding flow.
