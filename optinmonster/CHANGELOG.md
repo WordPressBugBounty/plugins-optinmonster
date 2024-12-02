@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to the OptinMonster plugin will be documented in this file.
 
+### 2.16.12 - 2024-12-02
+* Promotional updates to the dashboard.
+
+### 2.16.11 - 2024-11-27
+* Documentation updates.
+
 ### 2.16.10 - 2024-11-27
 * Improve access to future events.
 
