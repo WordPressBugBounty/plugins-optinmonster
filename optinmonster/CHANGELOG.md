@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to the OptinMonster plugin will be documented in this file.
 
+### 2.16.13 - 2024-12-04
+* Removed UI elements that were no longer needed.
+
 ### 2.16.12 - 2024-12-02
 * Promotional updates to the dashboard.
 
