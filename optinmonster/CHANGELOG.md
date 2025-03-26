@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to the OptinMonster plugin will be documented in this file.
 
+### 2.16.18 - 2025-03-26
+* Fixed a scenario where the wrong screenshot may load
+
 ### 2.16.17 - 2025-03-26
 * Improvements to campaign screenshots
 * Blocksy theme compatibility enhancements
