@@ -2,9 +2,9 @@
 Contributors: optinmonster, griffinjt, smub
 Tags: marketing, popup, popups, optin, ecommerce
 Requires at least: 5.0.0
-Tested up to: 6.8
+Tested up to: 6.9
 Requires PHP: 7.2
-Stable tag: 2.16.22
+Stable tag: 2.16.24
 License: GNU General Public License v2.0 or later
 
 🤩 Make popups & optin forms to get more email newsletter subscribers, leads, and sales - #1 most popular popup builder plugin! 🚀
@@ -328,6 +328,17 @@ We also recommend <a href="http://www.wpbeginner.com/">WPBeginner</a> for the be
 
 **Most Recent Changes:**
 
+= Popup Builder 2.16.24 =
+* Improved the campaign filtering to allow filtering by status and folder, along with ne sorting options.
+* Fixed a scenario where cloned campaigns were not displaying on WordPress sites.
+* Fixed a PHP 8.4 compatibility issue in the Rules exception handler.
+* Added WordPress 6.9 compatibility.
+* Added WooCommerce 10.5 compatibility.
+* Maintenance updates.
+
+= Popup Builder 2.16.23 =
+* Unreleased
+
 = Popup Builder 2.16.22 =
 * Promotional updates to the dashboard.
 
@@ -356,35 +367,5 @@ We also recommend <a href="http://www.wpbeginner.com/">WPBeginner</a> for the be
 
 = Popup Builder 2.16.15 =
 * Added WordPress 6.7 compatibility.
-
-= Popup Builder 2.16.13 =
-* Removed UI elements that were no longer needed.
-
-= Popup Builder 2.16.12 =
-* Promotional updates to the dashboard.
-
-= Popup Builder 2.16.11 =
-* Documentation updates.
-
-= Popup Builder 2.16.10 =
-* Improve access to future events.
-
-= Popup Builder 2.16.9 =
-* Internal improvements to for future events 😉.
-* Fixed a bug that may occur when generating URLs for use in our menu items.
-
-= Popup Builder 2.16.8 =
-* Avoid showing sidebar menu for role that does not have access when using User Role Editor plugin.
-* Various npm package updates used for generating our JavaScript code.
-
-= Popup Builder 2.16.7 =
-* Improvements to campaign output settings management.
-* UI improvements.
-
-= Popup Builder 2.16.6 =
-* Removed compatibility checks for WordFence as they are no longer needed.
-* Updates to onboarding flow.
-* Improved text when template search returns no results.
-* Various npm package updates used for generating our JavaScript code.
 
 **[View entire popup builder changelog](https://plugins.svn.wordpress.org/optinmonster/trunk/CHANGELOG.md)**

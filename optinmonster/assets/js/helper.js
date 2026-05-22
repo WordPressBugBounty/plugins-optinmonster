@@ -6,7 +6,6 @@
  * ========================================================== */
 window.OMAPI_Helper = window.OMAPI_Helper || {};
 (function (window, document, app) {
-	// eslint-disable-next-line strict
 	'use strict';
 
 	app.fixIds = [];
@@ -14,10 +13,10 @@ window.OMAPI_Helper = window.OMAPI_Helper || {};
 	/**
 	 * Add campaign id to "fixed" ids and maybe append the style fix.
 	 *
-	 * @param {Object} form        The WPForm object.
-	 * @param {Integer} campaignId The campaign id/slug.
+	 * @param {object} form The WPForm object.
+	 * @param {number} campaignId The campaign id/slug.
 	 *
-	 * @returns {boolean} True if date/time picker fields exist.
+	 * @returns {void}
 	 */
 	app.maybeFixZindex = (form, campaignId) => {
 		// If the campaign has already been "fixed," bail.
@@ -43,7 +42,7 @@ window.OMAPI_Helper = window.OMAPI_Helper || {};
 	/**
 	 * Remove the campaign id/style element.
 	 *
-	 * @param {Integer} campaignId The campaign id/slug.
+	 * @param {number} campaignId The campaign id/slug.
 	 *
 	 * @returns {void}
 	 */

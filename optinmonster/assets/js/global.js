@@ -5,7 +5,7 @@
  * https://awesomemotive.com
  * ========================================================== */
 window.OMAPI_Global = window.OMAPI_Global || {};
-(function (window, document, $, app, undefined) {
+(function (window, document, $, app) {
 	'use strict';
 
 	app.updateNotifications = function () {

@@ -1,7 +1,18 @@
 # Changelog
 All notable changes to the OptinMonster plugin will be documented in this file.
 
-## 2.16.22
+### 2.16.24 - 2026-05-22
+* Improved the campaign filtering to allow filtering by status and folder, along with ne sorting options.
+* Fixed a scenario where cloned campaigns were not displaying on WordPress sites.
+* Fixed a PHP 8.4 compatibility issue in the Rules exception handler.
+* Added WordPress 6.9 compatibility.
+* Added WooCommerce 10.5 compatibility.
+* Maintenance updates.
+
+### 2.16.23 - 2026-03-12
+* Unreleased.
+
+### 2.16.22 - 2025-11-19
 * Promotional updates to the dashboard.
 
 ### 2.16.21 - 2025-10-03

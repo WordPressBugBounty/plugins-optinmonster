@@ -5,15 +5,15 @@
  * Description: OptinMonster is the best WordPress popup builder plugin that helps you grow your email newsletter list and sales with email popups, exit intent popups, floating bars and more!
  * Author:      OptinMonster Popup Builder Team
  * Author URI:  https://optinmonster.com
- * Version:     2.16.22
+ * Version:     2.16.24
  * Text Domain: optin-monster-api
  * Domain Path: languages
  *
  * WC requires at least: 3.2
- * WC tested up to:      10.2
+ * WC tested up to:      10.5.3
  * Requires at least:    5.0
  * Requires PHP:         7.2
- * Tested up to:         6.8
+ * Tested up to:         6.9
  *
  * @package OMAPI
  *
@@ -69,7 +69,7 @@ class OMAPI {
 	 *
 	 * @var string
 	 */
-	public $version = '2.16.22';
+	public $version = '2.16.24';
 
 	/**
 	 * The name of the plugin.
@@ -187,7 +187,6 @@ class OMAPI {
 
 		load_textdomain( $domain, WP_LANG_DIR . '/' . $domain . '/' . $domain . '-' . $locale . '.mo' );
 		load_plugin_textdomain( $domain, false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
-
 	}
 
 	/**
@@ -199,7 +198,6 @@ class OMAPI {
 
 		// To do: add widgets.
 		register_widget( 'OMAPI_Widget' );
-
 	}
 
 	/**
@@ -346,7 +344,6 @@ class OMAPI {
 
 		// Fire a hook to say that the global classes are loaded.
 		do_action( 'optin_monster_api_global_loaded' );
-
 	}
 
 	/**
@@ -384,7 +381,6 @@ class OMAPI {
 
 		// Fire a hook to say that the admin classes are loaded.
 		do_action( 'optin_monster_api_admin_loaded' );
-
 	}
 
 	/**
@@ -510,11 +506,10 @@ class OMAPI {
 		$post = $this->validate_is_campaign_type( $post );
 		if ( ! empty( $post->ID ) ) {
 			$post->campaign_type = get_post_meta( $post->ID, '_omapi_type', true );
-			$post->enabled       = ! ! get_post_meta( $post->ID, '_omapi_enabled', true );
+			$post->enabled       = (bool) get_post_meta( $post->ID, '_omapi_enabled', true );
 		}
 
 		return $post;
-
 	}
 
 	/**
@@ -640,7 +635,6 @@ class OMAPI {
 				'apikey' => $apikey,
 			)
 		);
-
 	}
 
 	/**
@@ -718,7 +712,7 @@ class OMAPI {
 	 */
 	public function get_api_key_errors() {
 		$option = $this->get_option();
-		return isset( $option['is_expired'] ) && $option['is_expired'] || isset( $option['is_disabled'] ) && $option['is_disabled'] || isset( $option['is_invalid'] ) && $option['is_invalid'];
+		return ( isset( $option['is_expired'] ) && $option['is_expired'] ) || ( isset( $option['is_disabled'] ) && $option['is_disabled'] ) || ( isset( $option['is_invalid'] ) && $option['is_invalid'] );
 	}
 
 	/**
@@ -922,11 +916,10 @@ class OMAPI {
 		}
 
 		// Check if the file exists. If so, load the file.
-		$filename = dirname( __FILE__ ) . DIRECTORY_SEPARATOR . str_replace( '_', DIRECTORY_SEPARATOR, $classname ) . '.php';
+		$filename = __DIR__ . DIRECTORY_SEPARATOR . str_replace( '_', DIRECTORY_SEPARATOR, $classname ) . '.php';
 		if ( file_exists( $filename ) ) {
 			require $filename;
 		}
-
 	}
 
 	/**
@@ -1227,8 +1220,11 @@ class OMAPI {
 
 		return $this->$property;
 	}
-
 }
+
+// Mixing functions in with the class for activation and uninstall hooks, as well
+// as the template tag, since they need to be outside of the class scope.
+// phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed
 
 register_activation_hook( __FILE__, 'optin_monster_api_activation_hook' );
 /**
@@ -1314,7 +1310,6 @@ function optin_monster_api_uninstall_hook() {
 	} else {
 		delete_option( 'optin_monster_api' );
 	}
-
 }
 
 // Load the plugin.
@@ -1351,7 +1346,6 @@ if ( ! function_exists( 'optin_monster' ) ) {
 		} else {
 			echo do_shortcode( $shortcode );
 		}
-
 	}
 }
 
@@ -1369,6 +1363,5 @@ if ( ! function_exists( 'optin_monster_tag' ) ) {
 
 		// Return the v2 template tag.
 		return optin_monster( $id, 'slug', array(), $return );
-
 	}
 }
