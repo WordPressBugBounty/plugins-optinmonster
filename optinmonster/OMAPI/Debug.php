@@ -30,33 +30,34 @@ class OMAPI_Debug {
 	public static function can_output_debug() {
 		$rules_debug = ! empty( $_GET['omwpdebug'] ) ? sanitize_text_field( wp_unslash( $_GET['omwpdebug'] ) ) : '';
 
+		// Persistent enablement (via REST) still requires this query var on the frontend.
 		if ( $rules_debug ) {
 			$omapi         = OMAPI::get_instance();
 			$disable       = 'off' === $rules_debug;
-			$decoded       = base64_decode( base64_decode( $rules_debug ) );
-			$debug_enabled = $omapi->get_option( 'api', 'omwpdebug' );
-			$creds         = $omapi->get_api_credentials();
-			if (
-				! empty( $creds['apikey'] )
-				&& ( $decoded === $creds['apikey'] || $disable )
-			) {
+			$debug_enabled = (bool) $omapi->get_option( 'api', 'omwpdebug' );
 
-				$option = $omapi->get_option();
-
-				if ( $disable ) {
-					unset( $option['api']['omwpdebug'] );
-					$debug_enabled = false;
-				} else {
-					$option['api']['omwpdebug'] = true;
-					$debug_enabled              = true;
+			// Read-only: this block never writes to wp_options.
+			if ( $disable ) {
+				$debug_enabled = false;
+			} elseif ( ! $debug_enabled ) {
+				// A valid apikey token enables debug for this request only; nothing is stored.
+				$creds = $omapi->get_api_credentials();
+				if ( ! empty( $creds['apikey'] ) ) {
+					$inner   = base64_decode( $rules_debug, true );
+					$decoded = ( false !== $inner ) ? base64_decode( $inner, true ) : false;
+					if (
+						is_string( $decoded )
+						&& '' !== $decoded
+						&& hash_equals( (string) $creds['apikey'], $decoded )
+					) {
+						$debug_enabled = true;
+					}
 				}
-				update_option( 'optin_monster_api', $option );
 			}
 
-			$rules_debug = $debug_enabled || is_user_logged_in() && $omapi->can_access( 'rules_debug' );
+			$rules_debug = $debug_enabled || ( is_user_logged_in() && $omapi->can_access( 'rules_debug' ) );
 		}
 
-		// If query var is set and user can manage OM, output debug data.
 		return apply_filters( 'optin_monster_api_should_output_rules_debug', ! empty( $rules_debug ) );
 	}
 
@@ -170,5 +171,4 @@ class OMAPI_Debug {
 		<pre class="_om-debugging _om-optin">$conditionals: <?php echo esc_html( var_export( $results, true ) ); ?></pre>
 		<?php
 	}
-
 }

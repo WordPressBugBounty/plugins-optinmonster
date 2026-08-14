@@ -163,8 +163,17 @@ class OMAPI_MailPoet {
 		$data       = array_merge( $_REQUEST, $optin_data );
 		unset( $data['optinData'] );
 
-		$optin = OMAPI::get_instance()->get_optin_by_slug( stripslashes( $data['optin'] ) );
-		$list  = get_post_meta( $optin->ID, '_omapi_mailpoet_list', true );
+		$slug = isset( $data['optin'] ) ? wp_unslash( $data['optin'] ) : '';
+		if ( '' === $slug ) {
+			wp_send_json_error( esc_html__( 'Missing campaign slug.', 'optin-monster-api' ), 400 );
+		}
+
+		$optin = OMAPI::get_instance()->get_optin_by_slug( $slug );
+		if ( empty( $optin->ID ) ) {
+			wp_send_json_error( esc_html__( 'Campaign not found.', 'optin-monster-api' ), 404 );
+		}
+
+		$list = get_post_meta( $optin->ID, '_omapi_mailpoet_list', true );
 
 		$user = $this->prepare_subscriber_data( $optin, $data );
 
@@ -374,7 +383,7 @@ class OMAPI_MailPoet {
 		$meta_fields = ! empty( $data['meta'] ) ? stripslashes_deep( $data['meta'] ) : array();
 		$smart_tags  = ! empty( $data['tags'] ) ? stripslashes_deep( $data['tags'] ) : array();
 
-		$optin_fields_config = get_post_meta( $optin_id, '_omapi_mailpoet_optin_fields_config', true );
+		$optin_fields_config       = get_post_meta( $optin_id, '_omapi_mailpoet_optin_fields_config', true );
 		$optin_meta_fields_by_name = array();
 
 		if ( ! empty( $optin_fields_config['meta'] ) ) {
@@ -400,7 +409,7 @@ class OMAPI_MailPoet {
 				'value' => $smart_tags['coupon_code'],
 				'label' => 'Coupon Code',
 			);
-			$custom_fields['tags.couponLabel']  = array(
+			$custom_fields['tags.couponLabel'] = array(
 				'value' => $smart_tags['coupon_label'],
 				'label' => 'Coupon Label',
 			);

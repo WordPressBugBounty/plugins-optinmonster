@@ -117,7 +117,7 @@ class OMAPI_Pages {
 			// Add BFCM item to pages array for redirect handling, but mark it to skip auto-registration
 			// since it's registered manually in Menu.php to control position.
 			if ( $bfcmitem ) {
-				$bfcmitem['skip_auto_register'] = true;
+				$bfcmitem['skip_auto_register']    = true;
 				$this->pages['optin-monster-bfcm'] = $bfcmitem;
 			}
 
@@ -209,9 +209,9 @@ class OMAPI_Pages {
 	 * @return bool|array
 	 */
 	public function should_show_bfcf_menu_item() {
-		$timezone     = new DateTimeZone( 'America/New_York' );
-		$now          = new DateTime( 'now', $timezone );
-		$year         = $now->format( 'Y' );
+		$timezone = new DateTimeZone( 'America/New_York' );
+		$now      = new DateTime( 'now', $timezone );
+		$year     = $now->format( 'Y' );
 
 		// Get Thanksgiving as a DateTime object in ET timezone with explicit year.
 		$thanksgiving = new DateTime( "fourth Thursday of November {$year}", $timezone );

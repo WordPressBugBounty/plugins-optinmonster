@@ -786,5 +786,4 @@ class OMAPI_WooCommerce extends OMAPI_Integrations_Base {
 			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', $file, true );
 		}
 	}
-
 }

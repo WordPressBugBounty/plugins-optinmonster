@@ -491,7 +491,7 @@ class OMAPI_Notifications {
 		$count = absint( $count );
 
 		if ( ! $this->base->get_api_credentials() ) {
-			$count++;
+			++$count;
 		}
 
 		return $count;

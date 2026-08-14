@@ -594,5 +594,4 @@ class OMAPI_Api {
 			'adminUrl' => esc_url_raw( get_admin_url() ),
 		);
 	}
-
 }

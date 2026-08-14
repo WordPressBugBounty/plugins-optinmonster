@@ -428,8 +428,35 @@ class OMAPI_Save {
 	 * @return string
 	 */
 	public static function get_shortcodes_string( $shortcodes ) {
-		return is_array( $shortcodes )
-			? '|||' . implode( '|||', array_map( 'htmlentities', $shortcodes ) )
-			: '|||' . htmlentities( $shortcodes, ENT_COMPAT, 'UTF-8' );
+		if ( is_array( $shortcodes ) ) {
+			$encoded = array_map(
+				static function ( $shortcode ) {
+					return htmlentities( $shortcode ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+				},
+				$shortcodes
+			);
+
+			return '|||' . implode( '|||', $encoded );
+		}
+
+		return '|||' . htmlentities( $shortcodes ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8' );
+	}
+
+	/**
+	 * Reverse the encoding applied by get_shortcodes_string().
+	 *
+	 * Every reader of `_omapi_shortcode_output` must go through here. Both sides
+	 * previously stated their flags independently, and they drifted: PHP 8.1
+	 * changed the htmlentities() default so the encoder began emitting `&#039;`
+	 * while the readers still decoded with ENT_COMPAT, which leaves it alone.
+	 *
+	 * @since 2.17.0
+	 *
+	 * @param  string $shortcode An encoded shortcode string.
+	 *
+	 * @return string
+	 */
+	public static function decode_shortcode( $shortcode ) {
+		return html_entity_decode( $shortcode ?? '', ENT_QUOTES, 'UTF-8' );
 	}
 }

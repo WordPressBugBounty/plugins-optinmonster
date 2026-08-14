@@ -272,5 +272,4 @@ class OMAPI_Utils {
 
 		return defined( 'ICL_SITEPRESS_VERSION' ) && $sitepress && 2 === (int) $sitepress->get_setting( 'language_negotiation_type' );
 	}
-
 }

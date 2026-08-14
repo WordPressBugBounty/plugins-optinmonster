@@ -58,7 +58,7 @@ class OMAPI_Actions {
 		$this->set();
 
 		// Add validation messages.
-		add_action( 'admin_init', array( $this, 'maybe_fetch_missing_data' ), 99 );
+		add_action( 'admin_init', array( $this, 'maybe_fetch_missing_data_admin' ), 99 );
 
 		// We can run upgrade routines on cron runs and admin requests.
 		if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
@@ -79,9 +79,34 @@ class OMAPI_Actions {
 	}
 
 	/**
+	 * The admin_init entry point for the data backfill.
+	 *
+	 * The admin_init hook fires for any logged-in user, so gate the backfill
+	 * here. Other callers (the notifications REST route) authorize themselves
+	 * before calling maybe_fetch_missing_data(), so the guard lives on this
+	 * wrapper rather than on the shared method (mirrors
+	 * check_upgrade_routines_admin()).
+	 *
+	 * @since 2.17.0
+	 *
+	 * @return void
+	 */
+	public function maybe_fetch_missing_data_admin() {
+		if ( ! $this->base->can_access() ) {
+			return;
+		}
+
+		$this->maybe_fetch_missing_data();
+	}
+
+	/**
 	 * When the plugin is first installed
 	 * Or Migrated from a pre-1.8.0 version
 	 * We need to fetch some additional data
+	 *
+	 * Shared implementation — callers are responsible for the capability check
+	 * (admin_init via maybe_fetch_missing_data_admin(), REST via its route
+	 * permission callback).
 	 *
 	 * @since 1.8.0
 	 *
@@ -181,6 +206,12 @@ class OMAPI_Actions {
 	 * @return void
 	 */
 	public function check_upgrade_routines_admin() {
+		// Cron uses check_upgrade_routines() directly (no user); this admin
+		// wrapper runs on admin_init for any logged-in user, so gate it.
+		if ( ! $this->base->can_access() ) {
+			return;
+		}
+
 		$refresh = $this->check_upgrade_routines();
 		if ( $refresh ) {
 			wp_safe_redirect( esc_url_raw( add_query_arg( 'om', 1 ) ) );
@@ -220,9 +251,6 @@ class OMAPI_Actions {
 		}
 
 		if ( (string) $plugin_version !== (string) $upgrade_completed ) {
-			if ( empty( $this->base->notifications ) ) {
-				$this->base->notifications = new OMAPI_Notifications();
-			}
 			$this->base->notifications->update();
 			update_option( 'optinmonster_upgrade_completed', $plugin_version );
 		}

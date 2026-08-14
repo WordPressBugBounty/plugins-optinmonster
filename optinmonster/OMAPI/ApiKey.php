@@ -213,6 +213,4 @@ class OMAPI_ApiKey {
 				)
 			);
 	}
-
 }
-

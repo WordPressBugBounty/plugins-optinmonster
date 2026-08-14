@@ -213,7 +213,7 @@ class CampaignSelector extends elementorModules.frontend.handlers.Base {
 	 * @returns {string} Campaign slug.
 	 */
 	campaignSlug() {
-		const slug = this.getElementSettings('campaign_id');
+		const slug = this.getElementSettings('campaign_id') || '';
 		// Sanitize to numbers/letters only.
 		return slug.replace(/[^a-zA-Z0-9]/g, '');
 	}

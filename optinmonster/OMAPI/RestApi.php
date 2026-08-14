@@ -586,15 +586,26 @@ class OMAPI_RestApi extends OMAPI_BaseRestApi {
 	 */
 	public function update_campaign_data( $request ) {
 		$campaign_id = $request->get_param( 'id' );
+		$campaign    = $this->base->get_optin_by_slug( $campaign_id );
 
-		// If no campaign_id, return error.
-
-		$campaign = $this->base->get_optin_by_slug( $campaign_id );
-
-		// If no campaign, return 404.
+		if ( empty( $campaign ) || empty( $campaign->ID ) ) {
+			return new WP_REST_Response(
+				array(
+					/* translators: %s: the campaign post id. */
+					'message' => sprintf( esc_html__( 'Could not find campaign by given ID: %s. Are you sure campaign is associated with this site?', 'optin-monster-api' ), $campaign_id ),
+				),
+				404
+			);
+		}
 
 		// Get the Request Params.
 		$fields = json_decode( $request->get_body(), true );
+
+		// A malformed or non-object body decodes to something other than an
+		// array; treat it as no fields rather than indexing/iterating a scalar.
+		if ( ! is_array( $fields ) ) {
+			$fields = array();
+		}
 
 		if ( ! empty( $fields['taxonomies'] ) ) {
 
@@ -612,21 +623,83 @@ class OMAPI_RestApi extends OMAPI_BaseRestApi {
 				: array();
 		}
 
-		// Escape Parameters as needed.
-		// Update Post Meta.
-		foreach ( $fields as $key => $value ) {
-			$value = $this->sanitize( $value );
+		// Only write recognized campaign settings; ignore any other keys so a
+		// caller cannot set arbitrary _omapi_* post meta on the campaign.
+		$allowed = self::get_allowed_campaign_meta_keys();
 
-			switch ( $key ) {
-				default:
-					update_post_meta( $campaign->ID, '_omapi_' . $key, $value );
+		foreach ( $fields as $key => $value ) {
+			if ( ! in_array( $key, $allowed, true ) ) {
+				continue;
 			}
+
+			$value = $this->sanitize( $value );
+			update_post_meta( $campaign->ID, '_omapi_' . $key, $value );
 		}
 
 		return new WP_REST_Response(
 			array( 'message' => esc_html__( 'OK', 'optin-monster-api' ) ),
 			200
 		);
+	}
+
+	/**
+	 * Campaign meta keys (without the `_omapi_` prefix) that may be written
+	 * via the update_campaign_data REST endpoint.
+	 *
+	 * The campaign builder round-trips every existing `_omapi_*` meta key back
+	 * through this endpoint (its getSettings() posts the whole post_meta object
+	 * minus `ids`/`type`), so this must cover every key the plugin or an active
+	 * integration persists via that screen, or a save silently drops the
+	 * setting. To avoid that, integration display-rule keys (WooCommerce, EDD,
+	 * MemberPress) are read from the public `optin_monster_api_output_fields`
+	 * filter, so a newly-added integration field is allowed automatically with
+	 * no duplicated list to drift out of sync.
+	 *
+	 * `ids`, `type`, `output`, `shortcode`, and `shortcode_output` are always excluded:
+	 * OMAPI_Save owns them on the SaaS-sync path and the builder only
+	 * round-trips them incidentally. Excluding `ids`/`type` removes a
+	 * campaign-identity corruption vector; excluding `shortcode_output` (and its
+	 * `shortcode` flag) removes the stored-XSS write vector in issue #833, since
+	 * that meta feeds an html_entity_decode() render sink in OMAPI_Output.
+	 *
+	 * @since 2.17.0
+	 *
+	 * @return array Allowed meta keys (without the `_omapi_` prefix).
+	 */
+	public static function get_allowed_campaign_meta_keys() {
+		$keys = array(
+			// Core display/output rules ( OMAPI_Rules::$fields, minus type ).
+			'enabled',
+			'automatic',
+			'users',
+			'never',
+			'only',
+			'categories',
+			'taxonomies',
+			'show',
+			'test',
+			// Inline auto-placement ( OMAPI_Output ).
+			'auto_location',
+			'auto_location_paragraphs',
+			'auto_location_words',
+			// MailPoet integration ( OMAPI_MailPoet ).
+			'mailpoet',
+			'mailpoet_list',
+			'mailpoet_fields_auto_create',
+			'mailpoet_mapped_fields',
+			'mailpoet_optin_fields_config',
+			'mailpoet_phone_field',
+		);
+
+		// Ensure integrations have registered before reading their filter fields.
+		OMAPI_Rules::init_extensions();
+		$keys = apply_filters( 'optin_monster_api_output_fields', $keys );
+		$keys = is_array( $keys ) ? array_unique( $keys ) : array();
+
+		// These keys are never writable here regardless of what a filter adds.
+		$never_writable = array( 'ids', 'type', 'output', 'shortcode', 'shortcode_output' );
+
+		return array_values( array_diff( $keys, $never_writable ) );
 	}
 
 	/**
@@ -709,11 +782,22 @@ class OMAPI_RestApi extends OMAPI_BaseRestApi {
 		$posts = array();
 		if ( ! in_array( 'posts', $excluded, true ) ) {
 
-			// Posts query.
-			$post_types = implode( '","', esc_sql( get_post_types( array( 'public' => true ) ) ) );
+			// Posts query for public post types in publish/future status.
+			$post_types = get_post_types( array( 'public' => true ) );
 
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Already prepared.
-			$posts = $wpdb->get_results( "SELECT ID AS `value`, post_title AS `name` FROM {$wpdb->prefix}posts WHERE post_type IN (\"{$post_types}\") AND post_status IN('publish', 'future') ORDER BY post_title ASC", ARRAY_A );
+			// Guard against an empty set so we never emit `IN ()` (a syntax error).
+			if ( ! empty( $post_types ) ) {
+				$placeholders = implode( ', ', array_fill( 0, count( $post_types ), '%s' ) );
+
+				$posts = (array) $wpdb->get_results(
+					$wpdb->prepare(
+						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- $placeholders is only %s tokens (one per public post type); the post-type values are bound via prepare().
+						"SELECT ID AS `value`, post_title AS `name` FROM {$wpdb->posts} WHERE post_type IN ($placeholders) AND post_status IN ('publish', 'future') ORDER BY post_title ASC",
+						array_values( $post_types )
+					),
+					ARRAY_A
+				);
+			}
 		}
 
 		$post_types = ! in_array( 'post_types', $excluded, true )
@@ -768,12 +852,12 @@ class OMAPI_RestApi extends OMAPI_BaseRestApi {
 	public function get_notifications( $request ) {
 		add_filter( 'optin_monster_api_admin_notifications_has_access', array( $this, 'maybe_allow' ) );
 
-		// Make sure we have all the required user parameters.
-		$this->base->actions->maybe_fetch_missing_data();
-
 		if ( ! $this->base->notifications->has_access() ) {
 			return new WP_REST_Response( array(), 206 );
 		}
+
+		// Make sure we have all the required user parameters.
+		$this->base->actions->maybe_fetch_missing_data();
 
 		return new WP_REST_Response( $this->base->notifications->get( true ), 200 );
 	}
@@ -916,10 +1000,8 @@ class OMAPI_RestApi extends OMAPI_BaseRestApi {
 	public function handle_plugin_action( $request ) {
 		try {
 
-			$nonce = $request->get_param( 'actionNonce' );
-
 			// Check the nonce.
-			if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'om_plugin_action_nonce' ) ) {
+			if ( ! $this->has_valid_plugin_action_nonce( $request ) ) {
 				throw new Exception( esc_html__( 'Security token invalid!', 'optin-monster-api' ), rest_authorization_required_code() );
 			}
 
@@ -946,6 +1028,39 @@ class OMAPI_RestApi extends OMAPI_BaseRestApi {
 		} catch ( Exception $e ) {
 			return $this->exception_to_response( $e );
 		}
+	}
+
+	/**
+	 * Whether the request is authorized to perform a plugin install/activate action.
+	 *
+	 * Accepts the per-plugin `om_plugin_action_nonce` minted by `get_am_plugins_list()`, and
+	 * falls back to the `wp_rest` nonce when that one is absent or invalid.
+	 *
+	 * The fallback is not a weakening: this route's permission callback already requires the
+	 * OptinMonster access capability, and WP core rejects any cookie-authenticated write
+	 * without a valid `wp_rest` nonce before this callback ever runs, so CSRF is covered
+	 * either way. Requiring `om_plugin_action_nonce` on its own meant a client replaying a
+	 * cached plugins list sent an expired token and legitimate installs 403'd (#944).
+	 *
+	 * @since 2.17.0
+	 *
+	 * @param WP_REST_Request $request The REST Request.
+	 *
+	 * @return bool Whether the request carries a valid token.
+	 */
+	protected function has_valid_plugin_action_nonce( $request ) {
+		$action_nonce = $request->get_param( 'actionNonce' );
+		if ( ! empty( $action_nonce ) && wp_verify_nonce( $action_nonce, 'om_plugin_action_nonce' ) ) {
+			return true;
+		}
+
+		// Check the same value core would have used, header first, then the query/body param.
+		$rest_nonce = $request->get_header( 'X-WP-Nonce' );
+		if ( empty( $rest_nonce ) ) {
+			$rest_nonce = $request->get_param( '_wpnonce' );
+		}
+
+		return ! empty( $rest_nonce ) && (bool) wp_verify_nonce( $rest_nonce, 'wp_rest' );
 	}
 
 	/**
@@ -1045,7 +1160,6 @@ class OMAPI_RestApi extends OMAPI_BaseRestApi {
 
 			return $this->exception_to_response( $e );
 		}
-
 	}
 
 	/**
@@ -1200,12 +1314,6 @@ class OMAPI_RestApi extends OMAPI_BaseRestApi {
 				'plan'                   => array(
 					'validate' => 'is_string',
 				),
-				'customApiUrl'           => array(
-					'validate' => 'is_string',
-				),
-				'apiCname'               => array(
-					'validate' => 'is_string',
-				),
 				'resetOnboardingPlugins' => array(
 					'validate' => 'is_bool',
 				),
@@ -1230,20 +1338,13 @@ class OMAPI_RestApi extends OMAPI_BaseRestApi {
 				if ( call_user_func( $validator, $value ) ) {
 					switch ( $validator ) {
 						case 'is_bool':
-							$options[ $setting ] = ! ! $value;
+							$options[ $setting ] = (bool) $value;
 							break;
 						case 'is_string':
 							$options[ $setting ] = sanitize_text_field( $value );
 							break;
 					}
 					switch ( $setting ) {
-						case 'customApiUrl':
-							$options[ $setting ] = $value
-								? 0 === strpos( $value, 'https://' )
-									? $value
-									: 'https://' . $value . '/app/js/api.min.js'
-								: '';
-							break;
 						case 'resetOnboardingPlugins':
 							unset( $options['onboardingPlugins'] );
 							unset( $options['resetOnboardingPlugins'] );
@@ -1256,7 +1357,7 @@ class OMAPI_RestApi extends OMAPI_BaseRestApi {
 			if ( isset( $settings['omwpdebug'] ) ) {
 				$enabled = wp_validate_boolean( $settings['omwpdebug'] );
 				if ( empty( $enabled ) ) {
-					unset( $option['api']['omwpdebug'] );
+					unset( $options['api']['omwpdebug'] );
 				} else {
 					$options['api']['omwpdebug'] = true;
 				}
@@ -1265,7 +1366,7 @@ class OMAPI_RestApi extends OMAPI_BaseRestApi {
 
 			// Looks like we want to toggle the beta setting.
 			if ( isset( $settings['omwpbeta'] ) ) {
-				$enabled         = wp_validate_boolean( $settings['omwpdebug'] );
+				$enabled         = wp_validate_boolean( $settings['omwpbeta'] );
 				$options['beta'] = ! empty( $enabled );
 				$has_settings    = true;
 			}
@@ -1382,13 +1483,13 @@ class OMAPI_RestApi extends OMAPI_BaseRestApi {
 	 *
 	 * @since 2.6.6
 	 *
-	 * @param  string $object The API object to fetch.
+	 * @param  string $api_object The API object to fetch.
 	 *
 	 * @return WP_REST_Response|WP_Error The API Response or WP_Error object.
 	 */
-	protected function handle_omu_request( $object ) {
+	protected function handle_omu_request( $api_object ) {
 		try {
-			$result = OMAPI_OmuApi::cached_request( $object );
+			$result = OMAPI_OmuApi::cached_request( $api_object );
 			$api    = OMAPI_OmuApi::instance();
 
 			if ( is_wp_error( $result ) ) {
@@ -1456,8 +1557,13 @@ class OMAPI_RestApi extends OMAPI_BaseRestApi {
 		// Get the connection token from the request body.
 		$connection_token = sanitize_text_field( $request->get_param( 'connectionToken' ) );
 
-		// Get the array of potential plugins to install.
-		$plugins = array_filter( wp_parse_slug_list( $request->get_param( 'plugins' ) ) );
+		// Only keep slugs we know how to install; a connection token doesn't
+		// authorize storing arbitrary ones. array_values() re-indexes so the
+		// survivors stay a JSON array for the Vue consumer.
+		$installable = wp_list_pluck( ( new OMAPI_Plugins() )->get_list(), 'slug' );
+		$plugins     = array_values(
+			array_intersect( wp_parse_slug_list( $request->get_param( 'plugins' ) ), $installable )
+		);
 
 		// Store the array of plugins the user requested to be installed. These
 		// will be installed the next time the user loads the plugin dashboard.

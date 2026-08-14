@@ -166,8 +166,8 @@ class OMAPI_Menu {
 		// Add BFCM menu item right after Dashboard if active.
 		$bfcm_item = $this->pages->should_show_bfcf_menu_item();
 		if ( $bfcm_item ) {
-			$menu_title = '<span class="om-menu-bfcm-highlight">🎁 ' . $bfcm_item['name'] . '</span>';
-			$hook = add_submenu_page(
+			$menu_title    = '<span class="om-menu-bfcm-highlight">🎁 ' . $bfcm_item['name'] . '</span>';
+			$hook          = add_submenu_page(
 				self::SLUG,
 				$bfcm_item['name'],
 				$menu_title,
@@ -364,11 +364,11 @@ class OMAPI_Menu {
 				);
 
 				// Maybe show the the BF item in the plugins description.
-				$pages = new OMAPI_Pages();
+				$pages     = new OMAPI_Pages();
 				$bfcm_item = $pages->should_show_bfcf_menu_item();
 
 				if ( $bfcm_item ) {
-					$bflink = sprintf(
+					$bflink  = sprintf(
 						'<a class="om-plugin-bf-link" href="%s" style="font-weight: 700; color: #ff0000;">%s</a>',
 						esc_url( $bfcm_item['redirect'] ),
 						esc_html( $bfcm_item['alternate-name'] )
@@ -398,11 +398,11 @@ class OMAPI_Menu {
 		}
 
 		// Find the BFCM menu item.
-		$bfcm_item = null;
+		$bfcm_item  = null;
 		$bfcm_index = null;
 		foreach ( $submenu[ self::SLUG ] as $index => $item ) {
 			if ( isset( $item[2] ) && 'optin-monster-bfcm' === $item[2] ) {
-				$bfcm_item = $item;
+				$bfcm_item  = $item;
 				$bfcm_index = $index;
 				break;
 			}

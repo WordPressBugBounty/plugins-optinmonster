@@ -806,7 +806,7 @@ class OMAPI_Rules {
 	 * @return self
 	 */
 	public function add_reason( $reason ) {
-		 $this->reasons[] = $reason;
+		$this->reasons[] = $reason;
 
 		return $this;
 	}
@@ -822,7 +822,7 @@ class OMAPI_Rules {
 	 * @return self
 	 */
 	public function set_advanced_settings_field( $field, $value ) {
-		 $this->advanced_settings[ $field ] = $value;
+		$this->advanced_settings[ $field ] = $value;
 
 		return $this;
 	}
@@ -837,7 +837,7 @@ class OMAPI_Rules {
 	 * @return self
 	 */
 	public function set_global_override( $value ) {
-		 $this->global_override = $value;
+		$this->global_override = $value;
 
 		return $this;
 	}

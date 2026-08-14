@@ -308,5 +308,4 @@ class OMAPI_Sites {
 
 		return new WP_Error( 'omapp_wrong_site', $message, $args );
 	}
-
 }

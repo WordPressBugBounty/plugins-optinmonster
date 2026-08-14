@@ -92,7 +92,7 @@ class OMAPI_Support {
 				'Categories'                       => get_post_meta( $campaign->ID, '_omapi_categories', true ),
 				'Taxonomies'                       => get_post_meta( $campaign->ID, '_omapi_taxonomies', true ),
 				'Template types to Show on'        => get_post_meta( $campaign->ID, '_omapi_show', true ),
-				'Shortcodes Synced and Recognized' => get_post_meta( $campaign->ID, '_omapi_shortcode', true ) ? htmlspecialchars_decode( get_post_meta( $campaign->ID, '_omapi_shortcode_output', true ) ) : 'None recognized',
+				'Shortcodes Synced and Recognized' => get_post_meta( $campaign->ID, '_omapi_shortcode', true ) ? OMAPI_Save::decode_shortcode( get_post_meta( $campaign->ID, '_omapi_shortcode_output', true ) ) : 'None recognized',
 			);
 
 			if ( OMAPI_Utils::is_inline_type( $design_type ) ) {
@@ -166,7 +166,7 @@ class OMAPI_Support {
 		$array = array(
 			'Plugin Version'      => esc_html( $this->base->version ),
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			'Server Info'         => esc_html( wp_unslash( $_SERVER['SERVER_SOFTWARE'] ) ),
+			'Server Info'         => esc_html( wp_unslash( $_SERVER['SERVER_SOFTWARE'] ?? '' ) ),
 			'PHP Version'         => function_exists( 'phpversion' ) ? esc_html( phpversion() ) : 'Unable to check.',
 			'Error Log Location'  => function_exists( 'ini_get' ) ? ini_get( 'error_log' ) : 'Unable to locate.',
 			'Default Timezone'    => date_default_timezone_get(),
@@ -245,7 +245,7 @@ class OMAPI_Support {
 			$path_count = 0;
 
 			foreach ( (array) $path as $key ) {
-				$path_count++;
+				++$path_count;
 
 				// If the key doesn't exist, break out of the loop.
 				if ( ! isset( $ref[ $key ] ) ) {
@@ -257,11 +257,37 @@ class OMAPI_Support {
 
 				// If we're at the end of the path array, mask the value.
 				if ( count( $path ) === $path_count && ! empty( $ref ) ) {
-					$ref = substr( (string) $ref, 0, 2 )
-						. str_repeat( '*', strlen( (string) $ref ) - 4 )
-						. substr( (string) $ref, -2 );
+					$ref = self::mask_value( (string) $ref );
 				}
 			}
 		}
+	}
+
+	/**
+	 * Mask a sensitive value, revealing only its first and last two characters.
+	 *
+	 * Values four characters or shorter are masked entirely: revealing the
+	 * leading and trailing two characters would expose the whole value, and
+	 * for values shorter than four str_repeat() would also throw a ValueError
+	 * on PHP 8.0+ for the negative count it would produce.
+	 *
+	 * @since 2.17.0
+	 *
+	 * @param  string $value The value to mask.
+	 *
+	 * @return string
+	 */
+	public static function mask_value( $value ) {
+		$value  = (string) $value;
+		$length = strlen( $value );
+
+		// Too short to partially reveal without leaking the whole value; mask entirely.
+		if ( $length <= 4 ) {
+			return str_repeat( '*', $length );
+		}
+
+		return substr( $value, 0, 2 )
+			. str_repeat( '*', $length - 4 )
+			. substr( $value, -2 );
 	}
 }

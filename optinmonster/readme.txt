@@ -1,10 +1,10 @@
 === Popup Builder & Popup Maker for WordPress – OptinMonster Email Marketing and Lead Generation ===
 Contributors: optinmonster, griffinjt, smub
 Tags: marketing, popup, popups, optin, ecommerce
-Requires at least: 5.0.0
-Tested up to: 6.9
-Requires PHP: 7.2
-Stable tag: 2.16.24
+Requires at least: 6.0
+Tested up to: 7.0
+Requires PHP: 7.4
+Stable tag: 2.17.0
 License: GNU General Public License v2.0 or later
 
 🤩 Make popups & optin forms to get more email newsletter subscribers, leads, and sales - #1 most popular popup builder plugin! 🚀
@@ -327,6 +327,17 @@ We also recommend <a href="http://www.wpbeginner.com/">WPBeginner</a> for the be
 == Changelog ==
 
 **Most Recent Changes:**
+
+= Popup Builder 2.17.0 =
+* Added WordPress 7.0 compatibility.
+* Bumped the minimum supported versions to PHP 7.4 and WordPress 6.0.
+* Fixed a fatal error on PHP 8.0+ during campaign sync when the API response omitted the page-limit header.
+* Fixed a PHP 8.1+ deprecation notice in the MailPoet integration when a form submission omitted the campaign slug.
+* Fixed a PHP 8.2+ "dynamic property" deprecation notice triggered by the Elementor widget.
+* Fixed a PHP warning shown in the Elementor editor when the account has no inline campaigns.
+* Fixed a JavaScript error when adding the OptinMonster widget in the Elementor editor on a site with no inline campaigns.
+* Fixed broken image paths for the Elementor widget icon and the loading spinner.
+* Security hardening
 
 = Popup Builder 2.16.24 =
 * Improved the campaign filtering to allow filtering by status and folder, along with ne sorting options.

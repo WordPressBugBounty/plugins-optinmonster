@@ -1,6 +1,19 @@
 # Changelog
 All notable changes to the OptinMonster plugin will be documented in this file.
 
+### [Unreleased]
+
+### 2.17.0 - 2026-08-13
+* Added WordPress 7.0 compatibility.
+* Raised the minimum supported versions to PHP 7.4 and WordPress 6.0.
+* Fixed a fatal error on PHP 8.0+ during campaign sync when the API response omitted the page-limit header.
+* Fixed a PHP 8.1+ deprecation notice in the MailPoet integration when a form submission omitted the campaign slug.
+* Fixed a PHP 8.2+ "dynamic property" deprecation notice triggered by the Elementor widget.
+* Fixed a PHP warning shown in the Elementor editor when the account has no inline campaigns.
+* Fixed a JavaScript error when adding the OptinMonster widget in the Elementor editor on a site with no inline campaigns.
+* Fixed broken image paths for the Elementor widget icon and the loading spinner.
+* Security hardening
+
 ### 2.16.24 - 2026-05-22
 * Improved the campaign filtering to allow filtering by status and folder, along with ne sorting options.
 * Fixed a scenario where cloned campaigns were not displaying on WordPress sites.

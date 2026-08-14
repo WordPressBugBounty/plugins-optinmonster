@@ -89,7 +89,6 @@ class OMAPI_ConstantContact {
 
 		self::$instance = $this;
 		$this->base     = OMAPI::get_instance();
-
 	}
 
 	/**
@@ -98,7 +97,7 @@ class OMAPI_ConstantContact {
 	 * @since 1.6.0
 	 */
 	public function register_cc_page() {
-		$slug        = 'optin-monster-constant-contact';
+		$slug = 'optin-monster-constant-contact';
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$is_current  = isset( $_GET['page'] ) && $slug === sanitize_key( wp_unslash( $_GET['page'] ) );
 		$parent_slug = $this->base->menu->parent_slug();
@@ -119,7 +118,6 @@ class OMAPI_ConstantContact {
 		if ( $this->hook ) {
 			add_action( 'load-' . $this->hook, array( $this, 'assets' ) );
 		}
-
 	}
 
 	/**
@@ -292,7 +290,6 @@ class OMAPI_ConstantContact {
 		$url  = 'https://wordpress.org/support/plugin/optinmonster/reviews?filter=5#new-post';
 		$text = sprintf( __( 'Please rate <strong>OptinMonster</strong> <a href="%1$s" target="_blank" rel="noopener">&#9733;&#9733;&#9733;&#9733;&#9733;</a> on <a href="%1$s" target="_blank" rel="noopener noreferrer">WordPress.org</a> to help us spread the word. Thank you from the OptinMonster team!', 'optin-monster-api' ), $url );
 		return $text;
-
 	}
 
 	/**
@@ -309,5 +306,4 @@ class OMAPI_ConstantContact {
 			)
 		);
 	}
-
 }

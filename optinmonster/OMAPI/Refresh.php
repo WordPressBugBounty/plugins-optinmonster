@@ -120,7 +120,7 @@ class OMAPI_Refresh {
 			$limit       = absint( wp_remote_retrieve_header( $this->api->response, 'limit' ) );
 			$page        = absint( wp_remote_retrieve_header( $this->api->response, 'page' ) );
 			$total       = absint( wp_remote_retrieve_header( $this->api->response, 'total' ) );
-			$total_pages = ceil( $total / $limit );
+			$total_pages = self::total_pages( $total, $limit );
 			$results     = array_merge( $results, (array) $body );
 
 			// If we've reached the end, prevent any further requests.
@@ -159,6 +159,25 @@ class OMAPI_Refresh {
 		}
 
 		return $this->error ? $this->error : true;
+	}
+
+	/**
+	 * Number of pages for a paginated API response.
+	 *
+	 * A missing or empty `limit` response header resolves to `0`; dividing by
+	 * it is a fatal DivisionByZeroError on PHP 8.0+, so a non-positive limit
+	 * yields 0 pages and the pagination loop terminates via its `0 === $limit`
+	 * guard.
+	 *
+	 * @since 2.17.0
+	 *
+	 * @param  int $total Total item count reported by the API.
+	 * @param  int $limit Items-per-page reported by the API.
+	 *
+	 * @return int
+	 */
+	public static function total_pages( $total, $limit ) {
+		return $limit > 0 ? (int) ceil( $total / $limit ) : 0;
 	}
 
 	/**
@@ -210,9 +229,10 @@ class OMAPI_Refresh {
 	public function get_info_args( $args = array() ) {
 
 		// Set additional flags.
-		$args['wp'] = $GLOBALS['wp_version'];
-		$args['av'] = $this->base->asset_version();
-		$args['v']  = $this->base->version;
+		$args['wp']  = $GLOBALS['wp_version'];
+		$args['php'] = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
+		$args['av']  = $this->base->asset_version();
+		$args['v']   = $this->base->version;
 
 		if ( OMAPI_WooCommerce::is_active() ) {
 			$args['wc'] = OMAPI_WooCommerce::version();
@@ -275,5 +295,4 @@ class OMAPI_Refresh {
 
 		return $this;
 	}
-
 }

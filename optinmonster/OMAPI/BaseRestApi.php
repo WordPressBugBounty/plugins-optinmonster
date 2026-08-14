@@ -157,7 +157,7 @@ abstract class OMAPI_BaseRestApi {
 
 		$connection_token = $this->base->get_option( 'connectionToken' );
 
-		if ( 'omwpoct_' . $connection_token !== $request_connection_token ) {
+		if ( empty( $connection_token ) || ! hash_equals( 'omwpoct_' . (string) $connection_token, (string) $request_connection_token ) ) {
 			return new WP_Error(
 				'omapp_rest_forbidden',
 				esc_html__( 'Could not verify your connection token.', 'optin-monster-api' ),
@@ -283,13 +283,13 @@ abstract class OMAPI_BaseRestApi {
 		}
 
 		if ( empty( $nonce ) ) {
-			throw new Exception( esc_html__( 'Missing security token!', 'optin-monster-api' ), rest_authorization_required_code() );
+			throw new Exception( esc_html__( 'Missing security token!', 'optin-monster-api' ), absint( rest_authorization_required_code() ) );
 		}
 
 		// Check the nonce.
 		$result = wp_verify_nonce( $nonce, 'wp_rest' );
 		if ( ! $result ) {
-			throw new Exception( esc_html__( 'Security token invalid!', 'optin-monster-api' ), rest_authorization_required_code() );
+			throw new Exception( esc_html__( 'Security token invalid!', 'optin-monster-api' ), absint( rest_authorization_required_code() ) );
 		}
 	}
 }

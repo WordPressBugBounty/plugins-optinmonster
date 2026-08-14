@@ -179,9 +179,9 @@ class OMAPI_Output {
 	 * @since 1.0.0
 	 */
 	public function maybe_load_optinmonster() {
-		 /**
-		  * Check if there are any campaigns for the site
-		  */
+		/**
+		 * Check if there are any campaigns for the site
+		 */
 		$optins = $this->base->get_optins();
 		if ( empty( $optins ) ) {
 			return;
@@ -229,12 +229,7 @@ class OMAPI_Output {
 			$in_footer
 		);
 
-		if ( version_compare( get_bloginfo( 'version' ), '4.1.0', '>=' ) ) {
-			add_filter( 'script_loader_tag', array( $this, 'filter_api_script' ), 10, 2 );
-		} else {
-			add_filter( 'clean_url', array( $this, 'filter_api_url' ) );
-		}
-
+		add_filter( 'script_loader_tag', array( $this, 'filter_api_script' ), 10, 2 );
 	}
 
 	/**
@@ -265,11 +260,14 @@ class OMAPI_Output {
 	 * Filters the API script tag to add a custom ID.
 	 *
 	 * @since 1.0.0
+	 * @deprecated 2.17.0 Use `OMAPI_Output::filter_api_script()` instead.
 	 *
 	 * @param string $url  The URL to filter.
 	 * @return string $url Amended URL with our ID attribute appended.
 	 */
 	public function filter_api_url( $url ) {
+		_deprecated_function( __METHOD__, '{{next}}', 'OMAPI_Output::filter_api_script()' );
+
 		// If the handle is not ours, do nothing.
 		if ( false === strpos( $url, str_replace( 'https://', '', OMAPI_Urls::om_api() ) ) ) {
 			return $url;
@@ -277,7 +275,6 @@ class OMAPI_Output {
 
 		// Adjust the URL to add our custom script ID.
 		return "$url' async='async' id='omapi-script";
-
 	}
 
 	/**
@@ -297,7 +294,6 @@ class OMAPI_Output {
 		$priority = apply_filters( 'optin_monster_post_priority', 999 ); // Deprecated.
 		$priority = apply_filters( 'optin_monster_api_post_priority', 999 );
 		add_filter( 'the_content', array( $this, 'load_optinmonster_inline_content' ), $priority );
-
 	}
 
 	/**
@@ -317,7 +313,7 @@ class OMAPI_Output {
 		}
 
 		// If the global $post is not set or the post status is not published, return early.
-		if ( empty( $post ) || isset( $post->ID ) && 'publish' !== get_post_status( $post->ID ) ) {
+		if ( empty( $post ) || ( isset( $post->ID ) && 'publish' !== get_post_status( $post->ID ) ) ) {
 			return $content;
 		}
 
@@ -375,7 +371,6 @@ class OMAPI_Output {
 
 		// Return the content.
 		return $content;
-
 	}
 
 	/**
@@ -384,9 +379,9 @@ class OMAPI_Output {
 	 * @since 1.0.0
 	 */
 	public function load_optinmonster() {
-		 /**
-		  * Check if there are any campaigns for the site
-		  */
+		/**
+		 * Check if there are any campaigns for the site
+		 */
 		$optins = $this->base->get_optins();
 		if ( empty( $optins ) ) {
 			return;
@@ -596,10 +591,22 @@ class OMAPI_Output {
 					continue;
 				}
 
+				$decoded = OMAPI_Save::decode_shortcode( $shortcode );
+
+				// Neutralize a stored `</script>` so it can't close the raw-text
+				// <script> template early and execute trailing markup. Backslashed
+				// `<\/script` isn't parsed as an end tag; scoped to `</script`
+				// so other content (e.g. a legit `</em>`) survives.
+				$helper = preg_replace( '#<(?=/script)#i', '<\\\\', $decoded );
+
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				echo '<script type="text/template" class="omapi-shortcode-helper">' . html_entity_decode( $shortcode, ENT_COMPAT, 'UTF-8' ) . '</script>';
+				echo '<script type="text/template" class="omapi-shortcode-helper">' . $helper . '</script>';
+				// ENT_COMPAT here is the wire format the external api.js consumer
+				// expects, so it deliberately does not match the ENT_QUOTES decode
+				// above. ENT_SUBSTITUTE keeps invalid UTF-8 from collapsing the whole
+				// block to an empty string.
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				echo '<script type="text/template" class="omapi-shortcode-parsed omapi-encoded">' . htmlentities( do_shortcode( html_entity_decode( $shortcode, ENT_COMPAT, 'UTF-8' ) ), ENT_COMPAT, 'UTF-8' ) . '</script>';
+				echo '<script type="text/template" class="omapi-shortcode-parsed omapi-encoded">' . htmlentities( do_shortcode( $decoded ), ENT_COMPAT | ENT_SUBSTITUTE, 'UTF-8' ) . '</script>';
 			}
 		}
 
@@ -614,7 +621,6 @@ class OMAPI_Output {
 		?>
 		</script>
 		<?php
-
 	}
 
 	/**
@@ -730,9 +736,9 @@ class OMAPI_Output {
 	public function display_rules_data() {
 		global $wp_query;
 
-		 /**
-		  * Check if there are any campaigns for the site
-		  */
+		/**
+		 * Check if there are any campaigns for the site
+		 */
 		$optins = $this->base->get_optins();
 		if ( empty( $optins ) ) {
 			return;
@@ -763,7 +769,7 @@ class OMAPI_Output {
 		}
 
 		// Get the current object's terms, if applicable. Defaults to public taxonomies only.
-		if ( ! empty( $post->ID ) && is_singular() || ( $wp_query->is_category() || $wp_query->is_tag() || $wp_query->is_tax() ) ) {
+		if ( ( ! empty( $post->ID ) && is_singular() ) || $wp_query->is_category() || $wp_query->is_tag() || $wp_query->is_tax() ) {
 
 			// Should we only check public taxonomies?
 			$only_public = apply_filters( 'optinmonster_only_check_public_taxonomies', true, $post );
@@ -816,9 +822,15 @@ class OMAPI_Output {
 	 * @return string         The optin campaign html.
 	 */
 	public function prepare_campaign( $optin ) {
-		$optin          = $this->base->validate_is_campaign_type( $optin );
+		$optin = $this->base->validate_is_campaign_type( $optin );
+
+		// Note: do NOT html_entity_decode() here. Campaign output is persisted
+		// verbatim by OMAPI_Save::optin_to_db (which removes wp_filter_post_kses),
+		// so entities in stored content are display text, not markup awaiting
+		// decode. Decoding at this render sink only re-materializes entity-smuggled
+		// markup (e.g. &lt;script&gt;) into executable bytes.
 		$campaign_embed = ! empty( $optin->post_content )
-			? trim( html_entity_decode( stripslashes( $optin->post_content ), ENT_QUOTES, 'UTF-8' ), '\'' )
+			? trim( stripslashes( $optin->post_content ), '\'' )
 			: '';
 
 		return apply_filters( 'optin_monster_campaign_embed_output', $campaign_embed, $optin );

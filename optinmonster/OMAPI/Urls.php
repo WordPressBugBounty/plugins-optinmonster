@@ -289,7 +289,10 @@ class OMAPI_Urls {
 	 */
 	public static function om_api() {
 		$custom_api_url = OMAPI::get_instance()->get_option( 'customApiUrl' );
-		return ! empty( $custom_api_url ) ? $custom_api_url : OPTINMONSTER_APIJS_URL;
+		if ( empty( $custom_api_url ) || 'https' !== strtolower( (string) wp_parse_url( $custom_api_url, PHP_URL_SCHEME ) ) ) {
+			return OPTINMONSTER_APIJS_URL;
+		}
+		return $custom_api_url;
 	}
 
 	/**
