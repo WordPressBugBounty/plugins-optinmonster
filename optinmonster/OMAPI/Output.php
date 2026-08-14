@@ -824,13 +824,14 @@ class OMAPI_Output {
 	public function prepare_campaign( $optin ) {
 		$optin = $this->base->validate_is_campaign_type( $optin );
 
-		// Note: do NOT html_entity_decode() here. Campaign output is persisted
-		// verbatim by OMAPI_Save::optin_to_db (which removes wp_filter_post_kses),
-		// so entities in stored content are display text, not markup awaiting
-		// decode. Decoding at this render sink only re-materializes entity-smuggled
-		// markup (e.g. &lt;script&gt;) into executable bytes.
+		// The API sends the campaign embed entity-encoded and OMAPI_Save stores it
+		// that way, so this decode is what turns it back into real markup.
+		// Without it the embed prints on the page as visible text and the
+		// campaign never loads. Callers must only pass campaigns synced from the
+		// API; write access to this post type is restricted in OMAPI_Type and
+		// that restriction is what makes the decode here safe.
 		$campaign_embed = ! empty( $optin->post_content )
-			? trim( stripslashes( $optin->post_content ), '\'' )
+			? trim( html_entity_decode( stripslashes( $optin->post_content ), ENT_QUOTES, 'UTF-8' ), '\'' )
 			: '';
 
 		return apply_filters( 'optin_monster_campaign_embed_output', $campaign_embed, $optin );

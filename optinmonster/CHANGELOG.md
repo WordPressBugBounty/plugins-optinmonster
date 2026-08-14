@@ -1,7 +1,8 @@
 # Changelog
 All notable changes to the OptinMonster plugin will be documented in this file.
 
-### [Unreleased]
+### 2.17.1 - 2026-08-14
+* Fixed campaign embed code printing on the page as visible text.
 
 ### 2.17.0 - 2026-08-13
 * Added WordPress 7.0 compatibility.
